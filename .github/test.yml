@@ -1,0 +1,13 @@
+# Azure Pipelines YAML - Formato correcto
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- checkout: self
+  displayName: 'Descargar código'
+
+- script: echo "Running automated tests"
+  displayName: 'Ejecutar pruebas'

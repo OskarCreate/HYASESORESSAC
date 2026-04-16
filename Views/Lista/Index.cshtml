@@ -1,0 +1,876 @@
+@model List<proyectoIngSoft.Models.Lista> 
+
+@{
+    var solicitudesProcesadas = ViewBag.SolicitudesProcesadas as List<proyectoIngSoft.Models.Lista>;
+    var countProcesadas = ViewBag.CountProcesadas ?? 0;
+}
+<div class="header">
+    <h2>Revisión de solicitudes</h2>
+    <button class="btn btn-danger me-2" data-bs-toggle="modal" data-bs-target="#modalReportar">
+            <i class="bi bi-exclamation-octagon"></i> Reportar Trabajador
+    </button>
+    <a asp-controller="SistemaSolicitud" asp-action="ListaSolicitudes" class="btn-consulta">
+        Consulta con ESSALUD
+    </a>
+</div>
+
+<!-- PRIMERA TABLA: SOLICITUDES EN PROCESO -->
+<div class="solicitudes-container">
+    <div class="tabs">
+        <span class="tab active">Solicitudes en Proceso <span class="badge">@Model.Count solicitudes</span></span>
+    </div>
+    <p class="filters-title">Filtros para Solicitudes en Proceso</p>
+
+    <div class="filters">
+        <div class="filter-item">
+            <label>Buscar Empleado</label>
+            <input type="text" id="filtroEmpleado" placeholder="Nombre o DNI..." onkeyup="filtrarTabla()" />
+        </div>
+        <div class="filter-item">
+            <label>Filtro de Fecha</label>
+            <select id="filtroFecha" onchange="filtrarTabla()">
+                <option value="">Todas las fechas</option>
+                <option value="hoy">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes">Este mes</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Fecha Específica</label>
+            <input type="date" id="fechaEspecifica" onchange="filtrarTabla()" />
+        </div>
+        <div class="filter-item">
+            <label>Tipo de Licencia</label>
+            <select id="filtroLicencia" onchange="filtrarTabla()">
+                <option value="">Todas las razones</option>
+                <option value="Accidente">Accidente</option>
+                <option value="Maternidad">Maternidad</option>
+                <option value="Enfermedad Familiar">Enfermedad Familiar</option>
+                <option value="Paternidad">Paternidad</option>
+                <option value="Fallecimiento Familiar">Fallecimiento Familiar</option>
+                <option value="Enfermedad">Enfermedad</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="solicitudes-table">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Razón del Descanso</th>
+                    <th>Fecha de Registro</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                    
+                </tr>
+            </thead>
+        </table>
+
+        <div class="table-body-scroll">
+            <table class="solicitudes-table">
+                <tbody id="tablaSolicitudes">
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.Username @item.Apellidos</strong><br />
+                                <span class="dni">DNI: @item.Dni</span>
+                            </td>
+                            <td>@item.Observaciones</td>
+                            <td>@item.FechaSolicitud.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @if (item.Estado == "En Proceso")
+                                {
+                                    <span class="estado estado-proceso">En Proceso</span>
+                                }
+                                else if (item.Estado == "En Observación")
+                                {
+                                    <span class="estado estado-observacion">En Observación</span>
+                                }
+                                else
+                                {
+                                    <span class="estado">@item.Estado</span>
+                                }
+                            </td>
+                            <td>
+                                <a href="javascript:void(0)"
+                                   class="btn-detalles"
+                                   data-descanso-id="@item.IdDescanso"
+                                   onclick="abrirModal(@item.IdDescanso)">
+                                    Ver Detalles
+                                </a>
+                                      <a href="javascript:void(0)"
+                                class="btn-editar"
+                                data-descanso-id="@item.IdDescanso"
+                                onclick="abrirModalEditar(@item.IdDescanso)">
+                                    Editar
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- SEGUNDA TABLA: SOLICITUDES PROCESADAS -->
+<div class="solicitudes-container">
+    <div class="tabs">
+        <span class="tab active">Solicitudes Procesadas 
+            <span class="badge">@countProcesadas solicitudes</span>
+        </span>
+    </div>
+
+    <p class="filters-title">Filtros para Solicitudes Procesadas</p>
+
+    <div class="filters">
+        <div class="filter-item">
+            <label>Buscar Empleado</label>
+            <input type="text" id="filtroEmpleadoProcesadas" placeholder="Nombre o DNI..." onkeyup="filtrarTablaProcesadas()" />
+        </div>
+        <div class="filter-item">
+            <label>Filtro de Fecha</label>
+            <select id="filtroFechaProcesadas" onchange="filtrarTablaProcesadas()">
+                <option value="">Todas las fechas</option>
+                <option value="hoy">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes">Este mes</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label>Fecha Específica</label>
+            <input type="date" id="fechaEspecificaProcesadas" onchange="filtrarTablaProcesadas()" />
+        </div>
+        <div class="filter-item">
+            <label>Tipo de Licencia</label>
+            <select id="filtroLicenciaProcesadas" onchange="filtrarTablaProcesadas()">
+                <option value="">Todas las razones</option>
+                <option value="Accidente">Accidente</option>
+                <option value="Maternidad">Maternidad</option>
+                <option value="Enfermedad Familiar">Enfermedad Familiar</option>
+                <option value="Paternidad">Paternidad</option>
+                <option value="Fallecimiento Familiar">Fallecimiento Familiar</option>
+                <option value="Enfermedad">Enfermedad</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="solicitudes-table">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Razón del Descanso</th>
+                    <th>Fecha Registro</th>
+                    <th>ESSALUD</th>
+                    <th>Acciones</th>
+                    <th>Estado</th> <!-- NUEVA COLUMNA -->
+                    <th>Visualizar Detalles del Descanso Médico</th>
+                    
+                </tr>
+            </thead>
+        </table>
+
+        <div class="table-body-scroll">
+            <table class="solicitudes-table">
+                <tbody id="tablaProcesadas">
+                    @if (solicitudesProcesadas != null && solicitudesProcesadas.Any())
+                    {
+                        foreach (var item in solicitudesProcesadas)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.Username @item.Apellidos</strong><br />
+                                    <span class="dni">DNI: @item.Dni</span>
+                                </td>
+                                <td>@item.Observaciones</td>
+                                <td>@item.FechaSolicitud.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (item.Estado == "Válido")
+                                    {
+                                        <span class="badge-color verde">Válido</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-color rojo">No válido</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.EstadoProcesado == "Aceptado" || item.EstadoProcesado == "Rechazado")
+                                    {
+                                        <!-- Botón deshabilitado -->
+                                        <span class="btn-detalles disabled" 
+                                            style="background-color: #6c757d; cursor: not-allowed; opacity: 0.6;"
+                                            title="Solicitud finalizada - No editable">
+                                            Ver Detalles
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <!-- Botón habilitado -->
+                                        <a href="javascript:void(0)"
+                                        class="btn-detalles"
+                                        data-descanso-id="@item.IdDescanso"
+                                        onclick="abrirModalProcesadas(@item.IdDescanso)">
+                                            Ver Detalles
+                                        </a>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.EstadoProcesado == "Procesado")
+                                    {
+                                        <span class="badge-color morado">Procesado</span>
+                                    }
+                                    else if (item.EstadoProcesado == "Aceptado")
+                                    {
+                                        <span class="badge-color verde">Aceptado</span>
+                                    }
+                                    else if (item.EstadoProcesado == "Rechazado")
+                                    {
+                                        <span class="badge-color rojo">Rechazado</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-color morado">Procesado</span>
+                                    }
+                                </td>       
+
+                                <td>
+    <button class="btn-detalles"
+        onclick="abrirModalDetalleDescanso(@item.IdDescanso)">
+    Ver
+</button>
+
+</td>
+                         
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">
+                                Aún no hay solicitudes procesadas.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="detalleModal" tabindex="-1" aria-labelledby="detalleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-custom">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5>Ver Detalles</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div id="detalleContenido">
+            <!-- Aquí se cargan los datos con AJAX -->
+        </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal vacío donde se cargará el contenido -->
+<div class="modal fade" id="detalleModalProcesadas" tabindex="-1" aria-labelledby="detalleModalProcesadasLabel" aria-hidden="true">
+ <div class="modal-dialog modal-dialog-centered modal-custom">
+    <div class="modal-content" id="detalleContenidoProcesadas">
+      <!-- Aquí se cargará la vista parcial -->
+    </div>
+  </div>
+</div>
+
+
+
+<!-- CONTENEDOR PARA EL MODAL DE EDICIÓN -->
+<div id="modalEditarContainer"></div>
+
+
+
+
+<!-- MODAL: Reportar Trabajador -->
+<div class="modal fade" id="modalReportar" tabindex="-1" aria-labelledby="modalReportarLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="modalReportarLabel">Reportar Trabajador</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            <form id="formReportar">
+                <div class="mb-3">
+                    <label for="trabajadorSelect" class="form-label">Trabajador</label>
+                    <select id="trabajadorSelect" class="form-select" required>
+                        <option value="">Seleccionar trabajador</option>
+                        @foreach (var item in Model)
+                        {
+                            <option value="@item.IdDescanso">@item.Username @item.Apellidos - DNI: @item.Dni</option>
+                        }
+                        @if (ViewBag.SolicitudesProcesadas != null)
+                        {
+                            foreach (var item in ViewBag.SolicitudesProcesadas)
+                            {
+                                <option value="@item.IdDescanso">@item.Username @item.Apellidos - DNI: @item.Dni</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="descripcionReporte" class="form-label">Descripción del Informe</label>
+                    <textarea id="descripcionReporte" class="form-control" rows="3" placeholder="Describe el motivo del reporte..." required></textarea>
+                </div>
+
+                <div class="text-end">
+                    <button type="button" id="btnEnviarReporte" class="btn btn-primary" disabled>
+                        <i class="bi bi-send"></i> Mandar Informe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<script>
+function abrirModal(descansoId) {
+    $.get("/Lista/DetalleDescanso", { descansoId: descansoId }, function (data) {
+        $("#detalleContenido").html(data);
+        $("#detalleModal").modal("show");
+    }).fail(function () {
+        alert("No se pudo cargar el detalle del descanso.");
+    });
+}
+
+function abrirModalProcesadas(descansoId) {
+    $.get("/Lista/DetalleDescansoProcesadas", { descansoId: descansoId }, function (data) {
+        $("#detalleContenidoProcesadas").html(data);
+        $("#detalleModalProcesadas").modal("show");
+    }).fail(function () {
+        alert("No se pudo cargar el detalle del descanso.");
+    });
+}
+
+
+
+
+function filtrarTabla() {
+    const filtroEmpleado = document.getElementById("filtroEmpleado").value.toLowerCase();
+    const filtroLicencia = document.getElementById("filtroLicencia").value.toLowerCase();
+    const fechaEspecifica = document.getElementById("fechaEspecifica").value;
+
+    const filas = document.querySelectorAll("#tablaSolicitudes tr");
+
+    filas.forEach(fila => {
+        const empleado = fila.cells[0].innerText.toLowerCase();
+        const licencia = fila.cells[1].innerText.toLowerCase();
+        const fecha = fila.cells[2].innerText.split("/").reverse().join("-");
+
+        let mostrar = true;
+
+        if (filtroEmpleado && !empleado.includes(filtroEmpleado)) mostrar = false;
+        if (filtroLicencia && !licencia.includes(filtroLicencia)) mostrar = false;
+        if (fechaEspecifica && fecha !== fechaEspecifica) mostrar = false;
+
+        fila.style.display = mostrar ? "" : "none";
+    });
+}
+
+function filtrarTablaProcesadas() {
+    const filtroEmpleado = document.getElementById("filtroEmpleadoProcesadas").value.toLowerCase();
+    const filtroLicencia = document.getElementById("filtroLicenciaProcesadas").value.toLowerCase();
+    const fechaEspecifica = document.getElementById("fechaEspecificaProcesadas").value;
+
+    const filas = document.querySelectorAll("#tablaProcesadas tr");
+
+    filas.forEach(fila => {
+        if (fila.cells.length > 1) { // Solo filas con datos
+            const empleado = fila.cells[0].innerText.toLowerCase();
+            const licencia = fila.cells[1].innerText.toLowerCase();
+            const fecha = fila.cells[2].innerText.split("/").reverse().join("-");
+
+            let mostrar = true;
+
+            // Filtro por empleado (nombre o DNI)
+            if (filtroEmpleado && !empleado.includes(filtroEmpleado)) {
+                mostrar = false;
+            }
+
+            // Filtro por tipo de licencia
+            if (filtroLicencia && !licencia.includes(filtroLicencia)) {
+                mostrar = false;
+            }
+
+            // Filtro por fecha específica
+            if (fechaEspecifica && fecha !== fechaEspecifica) {
+                mostrar = false;
+            }
+
+            fila.style.display = mostrar ? "" : "none";
+        }
+    });
+}
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const descripcionInput = document.getElementById("descripcionReporte");
+    const trabajadorSelect = document.getElementById("trabajadorSelect");
+    const btnEnviar = document.getElementById("btnEnviarReporte");
+
+    function validarFormulario() {
+        if (descripcionInput.value.trim() !== "" && trabajadorSelect.value !== "") {
+            btnEnviar.removeAttribute("disabled");
+        } else {
+            btnEnviar.setAttribute("disabled", "true");
+        }
+    }
+
+    descripcionInput.addEventListener("input", validarFormulario);
+    trabajadorSelect.addEventListener("change", validarFormulario);
+
+    btnEnviar.addEventListener("click", function () {
+        const trabajadorId = trabajadorSelect.value;
+        const descripcion = descripcionInput.value.trim();
+
+        if (!trabajadorId || !descripcion) {
+            alert("Por favor, complete todos los campos antes de enviar.");
+            return;
+        }
+
+        // Simulación de envío (puedes reemplazar con llamada AJAX real)
+        fetch('/Lista/EnviarReporte', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ trabajadorId, descripcion })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Error al enviar el reporte.");
+            return response.json();
+        })
+        .then(data => {
+            // Cierra el modal y muestra confirmación
+            const modal = bootstrap.Modal.getInstance(document.getElementById("modalReportar"));
+            modal.hide();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Informe enviado',
+                text: 'El reporte se ha registrado correctamente.',
+                confirmButtonColor: '#2c5aa0'
+            });
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo enviar el informe. Intente nuevamente.'
+            });
+        });
+    });
+});
+function abrirModalEditar(descansoId) {
+    $.get("/HU11/EditarDescanso", { id: descansoId }, function(modalHtml) {
+        $("#modalEditarContainer").html(modalHtml);
+        $("#modalEditarContainer .modal").modal("show");
+    }).fail(function () {
+        alert("No se pudo cargar el modal de edición.");
+    });
+}
+
+
+
+
+function abrirModalDetalleDescanso(id) {
+  $.ajax({
+    url: '/HU8/DetalleDescanso/' + id, // CORRECTO
+    type: 'GET',
+    success: function (data) {
+        $('#detalleContenidoProcesadas').html(data);
+        $('#detalleModalProcesadas').modal('show');
+    },
+    error: function () {
+        alert('No se pudieron cargar los detalles del descanso médico.');
+    }
+});
+}
+
+</script>
+
+
+
+
+<style>
+
+
+/* Modal más compacto */
+.modal-content {
+    font-size: 13px; /* tamaño de letra más pequeño */
+    padding: 10px;
+}
+
+.modal-body {
+    padding: 10px;
+}
+
+.section-title {
+    font-size: 14px;
+}
+
+.border.p-3 {
+    padding: 8px !important; /* reduce padding de las secciones */
+}
+
+/* ESTILOS GENERALES */
+.solicitudes-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.btn-editar {
+    background: #2c5aa0; /* Puedes cambiar el color si quieres otro */
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+/* ENCABEZADO */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    color: #333;
+}
+
+.btn-consulta {
+    background: #2c5aa0;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-consulta:hover {
+    background: #1e3d6f;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* TABS */
+.tabs {
+    margin-bottom: 10px;
+}
+
+.tab {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.tab.active {
+    color: #333;
+}
+
+.badge {
+    background: #e8eff7;
+    color: #2c5aa0;
+    font-size: 14px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+/* TÍTULO DE FILTROS */
+.filters-title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+/* FILTROS */
+.filters {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.filter-item label {
+    font-size: 13px;
+    color: #495057;
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.filter-item input,
+.filter-item select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.15s ease-in-out;
+}
+
+.filter-item input:focus,
+.filter-item select:focus {
+    border-color: #2c5aa0;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.1);
+}
+
+/* TABLA */
+.table-container {
+    overflow-x: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.solicitudes-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    table-layout: fixed;
+}
+
+.solicitudes-table th {
+    text-align: left;
+    padding: 12px 15px;
+    color: #495057;
+    font-weight: 600;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 14px;
+}
+
+.solicitudes-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    color: #333;
+}
+
+.solicitudes-table td strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.solicitudes-table .dni {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* CUERPO DE TABLA CON SCROLL */
+.table-body-scroll {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.table-body-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-body-scroll::-webkit-scrollbar-thumb {
+    background-color: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-body-scroll::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* ESTADOS */
+.estado {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    min-width: 100px;
+    text-align: center;
+}
+
+.estado-proceso {
+    background: #e8f1ff;
+    color: #2c5aa0;
+    border: 1px solid #c5d7f2;
+}
+
+.estado-observacion {
+    background: #fff7e6;
+    color: #b58900;
+    border: 1px solid #ffd166;
+}
+
+/* BOTÓN DETALLES */
+.btn-detalles {
+    background: #2c5aa0;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.btn-detalles:hover {
+    background: #1e3d6f;
+    color: #fff;
+    text-decoration: none;
+}
+
+/* ESTADOS PARA LA SEGUNDA TABLA */
+.badge-color {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 90px;
+}
+
+.badge-color.verde {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.badge-color.morado {
+    background-color: #e0d4f7;
+    color: #5b2fa0;
+    border: 1px solid #d1c1f0;
+}
+
+.badge-color.rojo {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f1b0b7;
+}
+
+/* ESTILOS PARA EL TEXTO CENTRADO */
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.py-3 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    padding: 10px;
+    font-weight: 500;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    padding: 10px;
+    font-weight: 500;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.d-grid.gap-2 {
+    gap: 10px !important;
+}
+
+
+.row > .col-md-6 {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+
+/* RESPONSIVE */
+
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<link rel="stylesheet" href="~/css/Modal.css" asp-append-version="true">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+$(document).ready(function () {
+    $('.btn-ver-procesada').click(function () {
+        var id = $(this).data('id');
+
+        // Cargar solo el contenido parcial dentro del modal
+        $('#detalleContenidoProcesadas').load('/Lista/DetalleDescansoModal/' + id, function (response, status, xhr) {
+            if (status === "success") {
+                $('#detalleModalProcesadas').modal('show');
+            } else {
+                alert("Error al cargar los detalles: " + xhr.statusText);
+            }
+        });
+    });
+});
+</script>
